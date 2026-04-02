@@ -3,11 +3,13 @@
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "@/hooks/use-session"
+import { useLock } from "@/hooks/use-lock"
 import { Logo, LogoIcon } from "@/components/ui/logo"
 
 export default function HomePage() {
   const router = useRouter()
   const { sessions, loading, fetchSessions, createSession, updateSession, deleteSession } = useSession()
+  const { fetchLockStatus, toggleLock, isLocked } = useLock()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState("")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -17,8 +19,12 @@ export default function HomePage() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetchSessions()
-  }, [fetchSessions])
+    fetchSessions().then((data) => {
+      if (data && data.length > 0) {
+        fetchLockStatus(data.map((s) => s.id))
+      }
+    })
+  }, [fetchSessions, fetchLockStatus])
 
   const handleCreate = async () => {
     if (creating) return
@@ -30,6 +36,7 @@ export default function HomePage() {
   }
 
   const startEditing = (id: string, currentTitle: string) => {
+    if (isLocked(id)) return
     setEditingId(id)
     setEditValue(currentTitle || "")
     setTimeout(() => inputRef.current?.focus(), 0)
@@ -134,10 +141,11 @@ export default function HomePage() {
                     />
                   ) : (
                     <div
-                      className="text-base text-[#1E293B] font-medium truncate hover:text-[#2563EB] transition-colors duration-150"
+                      className={`text-base text-[#1E293B] font-medium truncate transition-colors duration-150 ${isLocked(s.id) ? "" : "hover:text-[#2563EB] cursor-text"}`}
                       onClick={(e) => { e.stopPropagation(); startEditing(s.id, s.title) }}
-                      title="点击重命名"
+                      title={isLocked(s.id) ? "项目已锁定" : "点击重命名"}
                     >
+                      {isLocked(s.id) && <span className="mr-1.5">🔒</span>}
                       {s.title || "Untitled"}
                     </div>
                   )}
@@ -148,18 +156,37 @@ export default function HomePage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={(e) => { e.stopPropagation(); startEditing(s.id, s.title) }}
-                  className="opacity-0 group-hover:opacity-100 h-8 w-8 flex items-center justify-center rounded-lg text-[#94A3B8] hover:text-[#2563EB] hover:bg-[#EFF6FF] transition-all duration-150 cursor-pointer"
-                  title="重命名"
+                  onClick={(e) => { e.stopPropagation(); toggleLock(s.id) }}
+                  className={`h-8 w-8 flex items-center justify-center rounded-lg transition-all duration-150 cursor-pointer ${
+                    isLocked(s.id)
+                      ? "text-[#F59E0B] hover:text-[#D97706] hover:bg-[#FFFBEB]"
+                      : "opacity-0 group-hover:opacity-100 text-[#94A3B8] hover:text-[#475569] hover:bg-[#F1F5F9]"
+                  }`}
+                  title={isLocked(s.id) ? "解锁项目" : "锁定项目"}
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                  {isLocked(s.id) ? (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                  ) : (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
+                  )}
                 </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setDeletingId(s.id) }}
-                  className="opacity-0 group-hover:opacity-100 h-8 w-8 flex items-center justify-center rounded-lg text-[#94A3B8] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-all duration-150 cursor-pointer"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                </button>
+                {!isLocked(s.id) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); startEditing(s.id, s.title) }}
+                    className="opacity-0 group-hover:opacity-100 h-8 w-8 flex items-center justify-center rounded-lg text-[#94A3B8] hover:text-[#2563EB] hover:bg-[#EFF6FF] transition-all duration-150 cursor-pointer"
+                    title="重命名"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                  </button>
+                )}
+                {!isLocked(s.id) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDeletingId(s.id) }}
+                    className="opacity-0 group-hover:opacity-100 h-8 w-8 flex items-center justify-center rounded-lg text-[#94A3B8] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-all duration-150 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                  </button>
+                )}
                 <svg className="w-5 h-5 text-[#CBD5E1]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
               </div>
             </div>
@@ -204,8 +231,12 @@ export default function HomePage() {
         </div>
       )}
 
-      <footer className="h-12 flex items-center justify-center border-t border-[#E2E8F0]">
+      <footer className="h-12 flex items-center justify-center gap-2 border-t border-[#E2E8F0]">
         <span className="text-xs text-[#94A3B8]">CaroCut v0.1</span>
+        <span className="text-xs text-[#CBD5E1]">·</span>
+        <a href="https://github.com/bilibili/carocut" target="_blank" rel="noopener noreferrer" className="text-xs text-[#94A3B8] hover:text-[#2563EB] transition-colors duration-150">
+          GitHub
+        </a>
       </footer>
     </div>
   )

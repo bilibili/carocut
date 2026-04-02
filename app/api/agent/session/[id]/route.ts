@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClient } from "@/lib/opencode"
-import { deleteWorkspace } from "@/lib/workspace"
+import { deleteWorkspace, isWorkspaceLocked } from "@/lib/workspace"
 import { formatError } from "@/lib/api-utils"
 
 type Ctx = { params: Promise<{ id: string }> }
@@ -20,6 +20,9 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 export async function PATCH(req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params
+    if (await isWorkspaceLocked(id)) {
+      return NextResponse.json({ error: "项目已锁定，无法修改" }, { status: 403 })
+    }
     const { title } = await req.json().catch(() => ({}))
     if (typeof title !== "string") {
       return NextResponse.json({ error: "Missing title" }, { status: 400 })
@@ -38,6 +41,9 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
   try {
     const { id } = await params
+    if (await isWorkspaceLocked(id)) {
+      return NextResponse.json({ error: "项目已锁定，无法删除" }, { status: 403 })
+    }
     const client = getClient()
     const { error } = await client.session.delete({ sessionID: id })
     if (error) return NextResponse.json({ error: formatError(error) }, { status: 502 })

@@ -13,9 +13,10 @@ import { QuestionProvider } from "./question-context"
 interface ChatPanelProps {
   sync: ReturnType<typeof useOpenCodeSync>
   sessionId: string
+  locked?: boolean
 }
 
-export function ChatPanel({ sync, sessionId }: ChatPanelProps) {
+export function ChatPanel({ sync, sessionId, locked }: ChatPanelProps) {
   const {
     messages,
     parts,
@@ -72,14 +73,21 @@ export function ChatPanel({ sync, sessionId }: ChatPanelProps) {
         <QuestionDialog request={pendingInteraction.request} onReply={handleQuestionReply} />
       )}
 
-      <ChatInput
-        onSend={sendMessage}
-        onCommand={sendCommand}
-        onAbort={abortSession}
-        disabled={sessionStatus.type === "busy"}
-        commands={commands}
-        agents={agents}
-      />
+      {locked ? (
+        <div className="border-t border-[#E2E8F0] bg-[#FFFBEB] px-4 py-3 flex items-center gap-2 text-sm text-[#92400E]">
+          <span>🔒</span>
+          <span>项目已锁定，无法发送消息</span>
+        </div>
+      ) : (
+        <ChatInput
+          onSend={sendMessage}
+          onCommand={sendCommand}
+          onAbort={abortSession}
+          disabled={sessionStatus.type === "busy"}
+          commands={commands}
+          agents={agents}
+        />
+      )}
     </div>
   )
 }

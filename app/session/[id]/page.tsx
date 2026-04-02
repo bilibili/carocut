@@ -7,6 +7,7 @@ import { useOpenCodeSync } from "@/hooks/use-opencode-sync"
 import { useArtifacts } from "@/hooks/use-artifacts"
 import { useAgentEvents } from "@/hooks/use-agent-events"
 import { useTokenUsage } from "@/hooks/use-token-usage"
+import { useLock } from "@/hooks/use-lock"
 import { ChatPanel } from "@/components/chat/chat-panel"
 import { ArtifactList } from "@/components/artifacts/artifact-list"
 import { DetailPanel } from "@/components/artifacts/detail-panel"
@@ -27,6 +28,8 @@ export default function SessionPage() {
   const [editingTitle, setEditingTitle] = useState(false)
   const [editValue, setEditValue] = useState("")
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const { fetchSingleLockStatus, isLocked } = useLock()
+  const locked = isLocked(sessionId)
 
   useEffect(() => {
     artifacts.refreshArtifacts()
@@ -45,9 +48,11 @@ export default function SessionPage() {
       .then((res) => res.json())
       .then((s: Session) => { if (s?.title) setSessionTitle(s.title) })
       .catch(() => {})
-  }, [sessionId])
+    fetchSingleLockStatus(sessionId)
+  }, [sessionId, fetchSingleLockStatus])
 
   const startEditingTitle = () => {
+    if (locked) return
     setEditValue(sessionTitle)
     setEditingTitle(true)
     setTimeout(() => titleInputRef.current?.focus(), 0)
@@ -143,6 +148,13 @@ export default function SessionPage() {
                 }}
                 className="text-sm text-[#1E293B] font-medium bg-white border border-[#2563EB] rounded-md px-2 py-0.5 outline-none min-w-[120px]"
               />
+            ) : locked ? (
+              <div className="flex items-center gap-1.5 text-sm text-[#475569]">
+                <span className="font-medium max-w-[200px] truncate">
+                  {sessionTitle || sessionId.slice(0, 8)}
+                </span>
+                <span className="text-[#F59E0B]" title="项目已锁定">🔒</span>
+              </div>
             ) : (
               <button
                 onClick={startEditingTitle}
@@ -178,7 +190,7 @@ export default function SessionPage() {
 
       <div className="flex-1 flex min-h-0">
         <div className="w-[480px] shrink-0 border-r border-[#E2E8F0] bg-white">
-          <ChatPanel sync={sync} sessionId={sessionId} />
+          <ChatPanel sync={sync} sessionId={sessionId} locked={locked} />
         </div>
         <div className="w-[280px] shrink-0 border-r border-[#E2E8F0] bg-white">
           <ArtifactList

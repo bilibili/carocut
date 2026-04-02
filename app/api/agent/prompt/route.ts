@@ -1,7 +1,7 @@
 import path from "node:path"
 import { NextRequest, NextResponse } from "next/server"
 import { getClientForWorkspace } from "@/lib/opencode"
-import { createWorkspace } from "@/lib/workspace"
+import { createWorkspace, isWorkspaceLocked } from "@/lib/workspace"
 import { formatError } from "@/lib/api-utils"
 
 const DEFAULT_AGENT = "carocut-orchestrator"
@@ -18,6 +18,11 @@ export async function POST(req: NextRequest) {
 
     // Ensure workspace directory exists
     await createWorkspace(sessionId)
+
+    if (await isWorkspaceLocked(sessionId)) {
+      return NextResponse.json({ error: "项目已锁定，无法发送消息" }, { status: 403 })
+    }
+
     const workspacePath = path.resolve(process.cwd(), "workspaces", sessionId)
 
     const client = getClientForWorkspace(workspacePath)

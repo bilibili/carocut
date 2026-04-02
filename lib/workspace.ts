@@ -3,6 +3,7 @@ import fs from "node:fs/promises"
 import { checkBootstrap, runBootstrap } from "./bootstrap"
 
 const WORKSPACES_ROOT = path.join(process.cwd(), "workspaces")
+const LOCK_FILE = ".locked"
 
 export async function createWorkspace(sessionId: string): Promise<string> {
   const dir = path.join(WORKSPACES_ROOT, sessionId)
@@ -66,6 +67,27 @@ export async function workspaceExists(sessionId: string): Promise<boolean> {
 export async function deleteWorkspace(sessionId: string): Promise<void> {
   const dir = path.join(WORKSPACES_ROOT, sessionId)
   await fs.rm(dir, { recursive: true, force: true })
+}
+
+export async function isWorkspaceLocked(sessionId: string): Promise<boolean> {
+  try {
+    await fs.access(path.join(WORKSPACES_ROOT, sessionId, LOCK_FILE))
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function lockWorkspace(sessionId: string): Promise<void> {
+  await fs.writeFile(
+    path.join(WORKSPACES_ROOT, sessionId, LOCK_FILE),
+    new Date().toISOString(),
+    "utf-8",
+  )
+}
+
+export async function unlockWorkspace(sessionId: string): Promise<void> {
+  await fs.rm(path.join(WORKSPACES_ROOT, sessionId, LOCK_FILE), { force: true })
 }
 
 export async function listWorkspaceFiles(
