@@ -1,6 +1,6 @@
 import { tool } from "@opencode-ai/plugin"
 import path from "path"
-import { run, loadEnv } from "./_utils"
+import { run } from "./_utils"
 
 export const batch_tts = tool({
   description: `批量生成 TTS 语音文件。解析 script.md 中的 [VO_XXX] 标记段落，
@@ -11,7 +11,6 @@ script.md 格式要求：每段旁白用 **[VO_001]** "文本内容" 或 [VO_001
 可用 --dry-run 仅解析脚本显示 VO 行数，不实际生成。
 推荐直接传 Edge voice ID，例如 zh-CN-XiaoxiaoNeural。
 tone 参数仅为兼容保留，当前 Edge TTS 后端会忽略它。`,
-
   args: {
     script: tool.schema.string().describe("script.md 文件的绝对路径"),
     output: tool.schema.string().describe("输出目录的绝对路径，通常为 <project>/raws/audio/vo"),
@@ -28,7 +27,6 @@ tone 参数仅为兼容保留，当前 Edge TTS 后端会忽略它。`,
     dry_run: tool.schema.boolean().optional()
       .describe("仅解析脚本显示 VO 行，不生成音频，默认 false"),
   },
-
   async execute(args, context) {
     const script = path.join(context.worktree, ".opencode/scripts/batch_tts.py")
     const cmd = ["python3", script, "--script", args.script, "--output", args.output]
@@ -48,7 +46,6 @@ export const tts_single = tool({
 支持通过 speed 控制语速。输出 WAV 格式音频文件。
 退出码含义：0=成功, 1=参数错误, 2=网络错误, 3=超时, 4=服务错误, 5=文件错误。
 推荐直接传 Edge voice ID，例如 zh-CN-XiaoxiaoNeural。`,
-
   args: {
     text: tool.schema.string().describe("要合成的文本内容"),
     output: tool.schema.string().describe("输出 WAV 文件的绝对路径"),
@@ -65,7 +62,6 @@ export const tts_single = tool({
     max_retries: tool.schema.number().optional()
       .describe("失败最大重试次数，默认 3"),
   },
-
   async execute(args, context) {
     const script = path.join(context.worktree, ".opencode/scripts/tts_invoke.py")
     const cmd = ["python3", script, "--text", args.text, "--output", args.output]
@@ -91,7 +87,6 @@ export const durations = tool({
 时长单位为毫秒（ms），这是整个项目的时序基准数据。
 修改任何音频文件后必须重新运行此工具更新 durations.json。
 需要系统工具：ffprobe（ffmpeg 包）。`,
-
   args: {
     input_dir: tool.schema.string()
       .describe("包含 VO_*.wav 文件的目录绝对路径"),
@@ -100,51 +95,12 @@ export const durations = tool({
     pattern: tool.schema.string().optional()
       .describe("文件匹配模式，默认 'VO_*.wav'"),
   },
-
   async execute(args, context) {
     const script = path.join(context.worktree, ".opencode/scripts/extract_durations.py")
     const cmd = ["python3", script, args.input_dir]
     if (args.output) cmd.push("--output", args.output)
     if (args.pattern) cmd.push("--pattern", args.pattern)
     const result = await run(cmd)
-    return result.trim()
-  },
-})
-
-export const search_sfx = tool({
-  description: `在 Freesound 搜索免费音效和背景音乐。
-支持按关键词搜索、时长筛选、许可证过滤。
-可仅返回搜索结果（JSON），或直接下载预览文件（高质量 MP3）到指定目录。
-许可证选项：cc0（公共领域，最安全）、cc-by（需署名）、all（所有）。
-需要环境变量：FREESOUND_API_KEY。`,
-
-  args: {
-    query: tool.schema.string().describe("搜索关键词（英文），如 'typing keyboard'"),
-    count: tool.schema.number().optional()
-      .describe("结果数量，默认 5，最大 150"),
-    license: tool.schema.enum(["cc0", "cc-by", "all"]).optional()
-      .describe("许可证过滤，默认 cc0"),
-    min_duration: tool.schema.number().optional()
-      .describe("最短时长（秒）"),
-    max_duration: tool.schema.number().optional()
-      .describe("最长时长（秒）"),
-    output: tool.schema.string().optional()
-      .describe("下载目录绝对路径（指定后自动下载）"),
-    json_output: tool.schema.string().optional()
-      .describe("搜索结果保存为 JSON 文件的路径"),
-  },
-
-  async execute(args, context) {
-    const env = await loadEnv(context.worktree)
-    const script = path.join(context.worktree, ".opencode/scripts/search_sounds.py")
-    const cmd = ["python3", script, "--query", args.query]
-    if (args.count) cmd.push("--count", String(args.count))
-    if (args.license) cmd.push("--license", args.license)
-    if (args.min_duration) cmd.push("--min-duration", String(args.min_duration))
-    if (args.max_duration) cmd.push("--max-duration", String(args.max_duration))
-    if (args.output) cmd.push("--output", args.output)
-    if (args.json_output) cmd.push("--json-output", args.json_output)
-    const result = await run(cmd, { env })
     return result.trim()
   },
 })
