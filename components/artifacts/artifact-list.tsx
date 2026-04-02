@@ -17,6 +17,7 @@ const sectionOrder: { type: ArtifactType; label: string }[] = [
   { type: "manifest", label: "配置文件" },
   { type: "image", label: "图片" },
   { type: "audio", label: "音频" },
+  { type: "document", label: "文档" },
 ]
 
 export function ArtifactList({ artifacts, selectedId, onSelect, studioAvailable, onStudioSelect, studioSelected }: ArtifactListProps) {

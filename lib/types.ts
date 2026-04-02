@@ -62,7 +62,7 @@ export type PendingQuestion = {
 export type PendingInteraction = PendingPermission | PendingQuestion
 
 // Artifact types for the middle panel
-export type ArtifactType = "manifest" | "image" | "audio" | "video" | "studio"
+export type ArtifactType = "manifest" | "image" | "audio" | "video" | "document" | "studio"
 
 export interface Artifact {
   id: string

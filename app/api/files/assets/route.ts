@@ -19,6 +19,8 @@ const MIME_MAP: Record<string, string> = {
   ".yaml": "text/yaml",
   ".yml": "text/yaml",
   ".txt": "text/plain",
+  ".md": "text/markdown",
+  ".pdf": "application/pdf",
 }
 
 export async function GET(req: NextRequest) {

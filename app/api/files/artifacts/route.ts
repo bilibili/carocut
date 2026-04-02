@@ -4,13 +4,14 @@ import fs from "node:fs/promises"
 import { getWorkspacePath, workspaceExists } from "@/lib/workspace"
 import type { Artifact, ArtifactType } from "@/lib/types"
 
-const ARTIFACT_DIRS: { subdir: string; type: ArtifactType; mime?: string }[] = [
+const ARTIFACT_DIRS: { subdir: string; type: ArtifactType }[] = [
   { subdir: "outputs", type: "video" },
   { subdir: "template-project/out", type: "video" },
-  { subdir: "manifests", type: "manifest", mime: "application/json" },
+  { subdir: "manifests", type: "manifest" },
   { subdir: "raws/images/existing", type: "image" },
   { subdir: "raws/images/retrieved", type: "image" },
   { subdir: "raws/images/generated", type: "image" },
+  { subdir: "raws/uploads", type: "image" },
   { subdir: "raws/audio/bgm", type: "audio" },
   { subdir: "raws/audio/sfx", type: "audio" },
   { subdir: "raws/audio/vo", type: "audio" },
@@ -39,13 +40,28 @@ const VIDEO_MIME: Record<string, string> = {
   ".mkv": "video/x-matroska",
 }
 
-const VIDEO_EXTS = new Set(Object.keys(VIDEO_MIME))
+const MANIFEST_MIME: Record<string, string> = {
+  ".json": "application/json",
+  ".yaml": "text/yaml",
+  ".yml": "text/yaml",
+  ".md": "text/markdown",
+  ".txt": "text/plain",
+}
 
-function guessMime(type: ArtifactType, ext: string, defaultMime?: string): string | undefined {
-  if (defaultMime) return defaultMime
+const DOCUMENT_MIME: Record<string, string> = {
+  ".pdf": "application/pdf",
+}
+
+const VIDEO_EXTS = new Set(Object.keys(VIDEO_MIME))
+const IMAGE_EXTS = new Set(Object.keys(IMAGE_MIME))
+const DOCUMENT_EXTS = new Set(Object.keys(DOCUMENT_MIME))
+
+function guessMime(type: ArtifactType, ext: string): string | undefined {
   if (type === "image") return IMAGE_MIME[ext] || "image/png"
   if (type === "audio") return AUDIO_MIME[ext] || "audio/mpeg"
   if (type === "video") return VIDEO_MIME[ext] || "video/mp4"
+  if (type === "manifest") return MANIFEST_MIME[ext] || "text/plain"
+  if (type === "document") return DOCUMENT_MIME[ext] || "application/octet-stream"
   return undefined
 }
 
@@ -85,19 +101,20 @@ export async function GET(req: NextRequest) {
 
         const createdAt = stat.birthtimeMs || stat.mtimeMs
 
-        // JSON files aren't renderable as images/audio; treat them as manifests
-        // so the preview panel displays their text content instead.
-        const effectiveType: ArtifactType =
-          (dir.type === "image" || dir.type === "audio") && ext === ".json"
-            ? "manifest"
-            : dir.type
+        // Determine effective type based on file extension
+        let effectiveType: ArtifactType = dir.type
+        if ((dir.type === "image" || dir.type === "audio") && ext === ".json") {
+          effectiveType = "manifest"
+        } else if (dir.type === "image" && !IMAGE_EXTS.has(ext)) {
+          effectiveType = DOCUMENT_EXTS.has(ext) ? "document" : "manifest"
+        }
 
         artifacts.push({
           id: `${dir.type}:${filePath}`,
           name: fileName,
           path: filePath,
           type: effectiveType,
-          mime: guessMime(effectiveType, ext, dir.mime),
+          mime: guessMime(effectiveType, ext),
           createdAt,
         })
       }

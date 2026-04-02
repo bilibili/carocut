@@ -82,8 +82,8 @@ export function DetailPanel({ artifact, sessionId, showStudio }: DetailPanelProp
     <div className="flex h-full flex-col bg-[#F8FAFC]">
       <div className="h-14 flex items-center justify-between border-b border-[#E2E8F0] px-6 bg-white">
         <span className="truncate text-base font-semibold text-[#1E293B]">{artifact.name}</span>
-        {(artifact.type === "image" || artifact.type === "video") && (
-          <a href={assetUrl} download={artifact.type === "video" ? artifact.name : undefined} target={artifact.type === "image" ? "_blank" : undefined} rel="noopener noreferrer" className="text-sm font-medium text-[#2563EB] hover:text-[#1D4ED8] flex items-center gap-1.5 transition-colors duration-150">
+        {(artifact.type === "image" || artifact.type === "video" || artifact.type === "document") && (
+          <a href={assetUrl} download={artifact.type === "video" ? artifact.name : undefined} target={artifact.type !== "video" ? "_blank" : undefined} rel="noopener noreferrer" className="text-sm font-medium text-[#2563EB] hover:text-[#1D4ED8] flex items-center gap-1.5 transition-colors duration-150">
             {artifact.type === "video" ? (
               <>
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
@@ -116,6 +116,9 @@ export function DetailPanel({ artifact, sessionId, showStudio }: DetailPanelProp
         {artifact.type === "image" && <ImageViewer key={artifact.id} src={assetUrl} alt={artifact.name} />}
         {artifact.type === "audio" && <AudioPlayer key={artifact.id} src={assetUrl} name={artifact.name} />}
         {artifact.type === "video" && <VideoPlayer key={artifact.id} src={assetUrl} name={artifact.name} />}
+        {artifact.type === "document" && (
+          <iframe key={artifact.id} src={assetUrl} title={artifact.name} className="h-full w-full border-0" />
+        )}
       </div>
     </div>
   )

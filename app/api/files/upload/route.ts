@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
     const sessionId = formData.get("sessionId") as string | null
-    const subdir = (formData.get("subdir") as string | null) || "raws/images/existing"
+    const subdir = (formData.get("subdir") as string | null) || "raws/uploads"
 
     if (!sessionId) {
       return NextResponse.json({ error: "Missing sessionId" }, { status: 400 })
