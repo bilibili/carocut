@@ -12,9 +12,10 @@ function fmt(n: number) {
 interface TokenUsageMetricsProps {
   usage: TokenUsage
   subagentByModel?: Record<string, ModelTokens>
+  subagentCost?: number
 }
 
-export function TokenUsageMetrics({ usage, subagentByModel = {} }: TokenUsageMetricsProps) {
+export function TokenUsageMetrics({ usage, subagentByModel = {}, subagentCost = 0 }: TokenUsageMetricsProps) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -31,9 +32,10 @@ export function TokenUsageMetrics({ usage, subagentByModel = {} }: TokenUsageMet
   const merged: Record<string, ModelTokens> = {}
   for (const [m, t] of Object.entries(usage.byModel)) merged[m] = { ...t }
   for (const [m, t] of Object.entries(subagentByModel)) {
-    if (!merged[m]) merged[m] = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
+    if (!merged[m]) merged[m] = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 }
     merged[m].input += t.input; merged[m].output += t.output
     merged[m].cacheRead += t.cacheRead; merged[m].cacheWrite += t.cacheWrite
+    merged[m].cost += t.cost ?? 0
   }
 
   const subTotals = Object.values(subagentByModel).reduce(
@@ -42,6 +44,7 @@ export function TokenUsageMetrics({ usage, subagentByModel = {} }: TokenUsageMet
   )
   const totalIn = usage.input + subTotals.input
   const totalOut = usage.output + subTotals.output
+  const totalCost = usage.cost + subagentCost
 
   if (totalIn === 0 && totalOut === 0) return null
 
@@ -57,6 +60,9 @@ export function TokenUsageMetrics({ usage, subagentByModel = {} }: TokenUsageMet
           <span className="mx-0.5 text-[#CBD5E1]">/</span>
           <span className="text-[#10B981]">↓{fmt(totalOut)}</span>
         </span>
+        {totalCost > 0 && (
+          <span className="text-[#94A3B8]">${totalCost.toFixed(4)}</span>
+        )}
       </button>
 
       {open && (
@@ -68,6 +74,7 @@ export function TokenUsageMetrics({ usage, subagentByModel = {} }: TokenUsageMet
                 <th className="text-left font-medium pb-1">Model</th>
                 <th className="text-right font-medium pb-1 text-[#2563EB]">In</th>
                 <th className="text-right font-medium pb-1 text-[#10B981]">Out</th>
+                <th className="text-right font-medium pb-1 text-[#94A3B8]">Cost</th>
               </tr>
             </thead>
             <tbody>
@@ -76,6 +83,7 @@ export function TokenUsageMetrics({ usage, subagentByModel = {} }: TokenUsageMet
                   <td className="py-1 pr-3 font-mono text-[11px] text-[#475569] max-w-[160px] truncate">{model}</td>
                   <td className="py-1 text-right text-[#2563EB]">{fmt(t.input)}</td>
                   <td className="py-1 text-right text-[#10B981]">{fmt(t.output)}</td>
+                  <td className="py-1 text-right text-[#94A3B8]">{t.cost > 0 ? `$${t.cost.toFixed(4)}` : "-"}</td>
                 </tr>
               ))}
             </tbody>

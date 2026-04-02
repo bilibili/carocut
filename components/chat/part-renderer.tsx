@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
@@ -509,6 +509,19 @@ function TaskToolView({ part }: { part: ToolPart }) {
   const agentType = (input.subagent_type ?? input.name ?? "agent") as string
   const description = (input.description ?? "") as string
   const summary = (metadata.summary ?? []) as TaskSummaryItem[]
+  const taskId = (metadata.sessionId as string) ?? null
+
+  // Fetch token usage for this subagent session
+  const [tokens, setTokens] = useState<{ input: number; output: number; cacheRead: number; cacheWrite: number; cost: number } | null>(null)
+  useEffect(() => {
+    if (!taskId) return
+    let stale = false
+    fetch(`/api/agent/session/${encodeURIComponent(taskId)}/tokens`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (!stale && data) setTokens(data) })
+      .catch(() => {})
+    return () => { stale = true }
+  }, [taskId, state.status])
 
   const statusConfig: Record<
     string,
@@ -563,6 +576,31 @@ function TaskToolView({ part }: { part: ToolPart }) {
 
       {open && (
         <div className="border-t border-[#F0ABFC]/20 bg-white">
+          {/* Task ID for resume */}
+          {taskId && (
+            <div className="px-3 py-1.5 flex items-center gap-1.5 border-b border-[#F0ABFC]/10">
+              <span className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider">Task ID</span>
+              <span className="font-mono text-[11px] text-[#7C3AED] select-all">{taskId}</span>
+            </div>
+          )}
+          {/* Token usage */}
+          {tokens && (tokens.input > 0 || tokens.output > 0) && (() => {
+            const formatTokenStr = (n: number) => {
+              if (n === 0) return "0"
+              if (n > 1000_000) return `${(n / 1000_000).toFixed(2)}M`
+              if (n > 1000) return `${(n / 1000).toFixed(2)}K`
+              return `${n}`
+            }
+            const cacheStr = tokens.cacheRead > 0 ? ` (${formatTokenStr(tokens.cacheRead)} cache)` : ""
+            const tokenStr = `↑ ${formatTokenStr(tokens.input)}${cacheStr} ↓ ${formatTokenStr(tokens.output)} tokens`
+            const costStr = tokens.cost > 0 ? `$${tokens.cost.toFixed(4)}` : ""
+            return (
+              <div className="px-3 py-1 text-[10px] text-[#94A3B8] flex items-center gap-2 border-b border-[#F0ABFC]/10">
+                <span className="text-[#CBD5E1]">{tokenStr}</span>
+                {costStr && <span className="text-[#CBD5E1]">{costStr}</span>}
+              </div>
+            )
+          })()}
           {/* Summary — list of tool calls the subagent made */}
           {summary.length > 0 && (
             <div className="px-3 py-2">

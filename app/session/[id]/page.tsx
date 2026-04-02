@@ -21,8 +21,8 @@ export default function SessionPage() {
   const { refreshArtifacts, checkStudio, ...artifactRest } = useArtifacts(sessionId)
   const artifacts = { refreshArtifacts, checkStudio, ...artifactRest }
   const tokenUsage = useTokenUsage(sync.messages)
-  const [subagentByModel, setSubagentByModel] = useState<Record<string, { input: number; output: number; cacheRead: number; cacheWrite: number }>>({})
-
+  const [subagentByModel, setSubagentByModel] = useState<Record<string, { input: number; output: number; cacheRead: number; cacheWrite: number; cost: number }>>({})
+  const [subagentCost, setSubagentCost] = useState(0)
   const [showStudio, setShowStudio] = useState(false)
   const [sessionTitle, setSessionTitle] = useState("")
   const [editingTitle, setEditingTitle] = useState(false)
@@ -39,7 +39,12 @@ export default function SessionPage() {
   useEffect(() => {
     fetch(`/api/agent/subagent-tokens?sessionId=${encodeURIComponent(sessionId)}`)
       .then((res) => res.json())
-      .then((data) => { if (!data.error) setSubagentByModel(data) })
+      .then((data) => {
+        if (!data.error) {
+          setSubagentByModel(data.byModel ?? data)
+          setSubagentCost(data.cost ?? 0)
+        }
+      })
       .catch(() => {})
   }, [sessionId])
 
@@ -172,7 +177,7 @@ export default function SessionPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <TokenUsageMetrics usage={tokenUsage} subagentByModel={subagentByModel} />
+          <TokenUsageMetrics usage={tokenUsage} subagentByModel={subagentByModel} subagentCost={subagentCost} />
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F1F5F9]">
             <div
               className={`w-1.5 h-1.5 rounded-full ${
