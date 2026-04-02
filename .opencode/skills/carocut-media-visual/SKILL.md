@@ -41,10 +41,12 @@ digraph visual_decision {
 
 ## Resource Source Types
 
+资源类型完整定义见 `carocut-resource-schema` skill。Media 只处理 visual 类型（image/video/sprite），不处理 data 和 components 类型。
+
 | Source | When to Use |
 |--------|-------------|
 | `existing` | User-provided materials already in raws/ |
-| `retrieve` | Objective backgrounds, stock photos, stock videos |
+| `retrieve` | Objective backgrounds, stock photos, stock videos (Pexels/Pixabay) |
 | `generate` | Custom characters, foreground elements with transparency |
 
 ### Sprite Sheets (Recommended for Character Animation)
@@ -63,7 +65,7 @@ When the storyboard requires motion footage (product demos, b-roll, ambient shot
 - id: demo_recording
   type: video
   description: "产品演示录屏"
-  source: pexels_video
+  source: retrieve
   search_keywords: ["product demo", "screen recording"]
   duration_range: "5-15s"
 ```
@@ -94,7 +96,7 @@ When the storyboard requires motion footage (product demos, b-roll, ambient shot
 - id: vid_001
   type: video
   description: "Aerial city timelapse"
-  source: pexels_video
+  source: retrieve
   search_keywords: ["aerial city", "timelapse", "urban"]
   duration_range: "5-10s"
   path: videos/retrieved/aerial_city_001.mp4

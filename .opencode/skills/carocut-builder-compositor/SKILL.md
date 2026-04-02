@@ -39,10 +39,21 @@ digraph implementation_order {
 }
 ```
 
-1. **Shared Components** - FlatDecorations, Card, DataTable, BarChart
+1. **Shared Components** - FlatDecorations, Card, DataTable, BarChart, plus motion-graphics from `resources.yaml` `components` section
 2. **Shot Components** - Chapter-by-chapter implementation
 3. **Audio Layers** - VoiceoverLayer, BackgroundMusicLayer, SfxLayer
 4. **Main Composition** - Assembly with TransitionSeries
+
+### Motion-Graphics Components
+
+Read `manifests/resources.yaml` → `components` section. Each `type: motion-graphics` entry describes a visual element that needs a React component in `src/components/`.
+
+**Implementation rules:**
+- Read the `description` field for visual intent (what to show, what data to include)
+- Read the `used_in` field to know which shots will import this component
+- Cross-reference with `storyboard.yaml` → corresponding shots' `visual_description` for layout and composition context
+- Use primitives (AnimatedText, AnimatedChart, DynamicBackground, etc.) as building blocks
+- Component naming: derive from the description, use PascalCase (e.g., "三级上报流程图" → `EscalationFlowDiagram.tsx`)
 
 ---
 

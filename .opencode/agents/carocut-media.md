@@ -43,6 +43,7 @@ dispatch_context:
 | Step | Skill | 加载时机 | 内容 |
 |------|-------|---------|------|
 | step-3 | `carocut-media-humanizer` | 开始脚本润色时 | AI 文风模式列表、替换规则、自然语言改写策略 |
+| step-4 | `carocut-resource-schema` | 开始视觉素材获取前 | 资源类型注册表、合法 type/source 值、消费者映射、能力边界 |
 | step-4 | `carocut-media-visual` | 开始视觉素材获取时 | 图片搜索策略、生图 prompt 工程、质量评估、裁剪规则 |
 | step-5 | `carocut-media-audio` | 开始音频素材获取时 | TTS 配置、语速调整、BGM/SFX 选择、durations.json 格式 |
 

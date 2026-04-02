@@ -81,18 +81,21 @@
       "permission": {
         "skill": {
           "*": "deny",
-          "carocut-planner-*": "allow"
+          "carocut-planner-*": "allow",
+          "carocut-resource-schema": "allow"
         },
         "websearch": "allow",
         "write": {
           "*": "deny",
           "**/manifests/*.md": "allow",
-          "**/manifests/storyboard.yaml": "allow"
+          "**/manifests/storyboard.yaml": "allow",
+          "**/manifests/resources.yaml": "allow"
         },
         "edit": {
           "*": "deny",
           "**/manifests/*.md": "allow",
-          "**/manifests/storyboard.yaml": "allow"
+          "**/manifests/storyboard.yaml": "allow",
+          "**/manifests/resources.yaml": "allow"
         }
       }
     },
@@ -115,7 +118,8 @@
       "permission": {
         "skill": {
           "*": "deny",
-          "carocut-media-*": "allow"
+          "carocut-media-*": "allow",
+          "carocut-resource-schema": "allow"
         },
         "websearch": "allow"
       }
@@ -137,7 +141,8 @@
       "permission": {
         "skill": {
           "*": "deny",
-          "carocut-builder-*": "allow"
+          "carocut-builder-*": "allow",
+          "carocut-resource-schema": "allow"
         }
       }
     },

@@ -274,11 +274,13 @@ After gathering requirements, analyze user's materials to extract structured dat
 
 ### Output Format (resources.yaml)
 
+**重要：** 资源类型定义见 `carocut-resource-schema` skill。写入 resources.yaml 前必须先加载该 skill，确保类型和 source 值合法。
+
 ```yaml
 resources:
   visual:
     - id: vis_001
-      type: image
+      type: image                # image | video | sprite（禁止使用 animation）
       description: "Precise description of visual content and purpose"
       source: existing | retrieve | generate
 
@@ -286,7 +288,7 @@ resources:
       type: video
       description: "Another visual asset"
       duration_ms: 5000
-      source: existing | retrieve | generate
+      source: existing | retrieve  # video 不支持 generate
 
   audio:
     - id: aud_001
@@ -302,6 +304,7 @@ resources:
       description: "Transition whoosh sound, short duration"
 
   data:
+    # data 类型由 Builder 直接消费（AnimatedChart/DataTable），Media 不处理
     - id: data_001
       type: table
       description: "Comparison table showing three product features"
@@ -331,6 +334,19 @@ resources:
           - label: "Satisfaction Rate"
             value: "98%"
 
+  components:
+    # motion-graphics 类型由 Builder 直接消费，生成 src/components/*.tsx
+    # 只描述画面意图和数据内容，不写 CSS/React/动画细节
+    - id: comp_001
+      type: motion-graphics
+      description: "三级上报流程图：普通告警→严重告警→灾难级，每级标注响应时间和处理人"
+      used_in: [shot_003, shot_008]
+
+    - id: comp_002
+      type: motion-graphics
+      description: "三列关键指标卡片：处理量(2.5M)、响应时间(< 200ms)、可用率(99.99%)"
+      used_in: [shot_005, shot_012]
+
 characters:
   - id: char_001
     name: "Narrator"
@@ -343,11 +359,12 @@ characters:
 
 ### Resource Source Types
 
-| Source | When to Use | STEP Reference |
-|--------|-------------|----------------|
-| `existing` | User-provided in raws/ | Already available |
-| `retrieve` | Stock image/video from Pexels/Pixabay | STEP-4 |
-| `generate` | AI-generated custom image (use ONLY if env `CARO_LLM_API_KEY` available) | STEP-4 |
+| Source | When to Use | Consumer |
+|--------|-------------|----------|
+| `existing` | User-provided in raws/ | Media (skip) → Builder |
+| `retrieve` | Stock image/video from Pexels/Pixabay | Media STEP-4 → Builder |
+| `generate` | AI-generated custom image/sprite (use ONLY if env `CARO_LLM_API_KEY` available) | Media STEP-4 → Builder |
+| 无 source 字段 | data/components 类型，Builder 代码实现 | Builder STEP-7 直接消费 |
 
 ---
 
@@ -742,6 +759,9 @@ After all four documents approved:
 | Missing voiceover_refs in storyboard | Every shot must include voiceover_refs (even if empty) |
 | Missing resource_refs in storyboard | Every shot should reference its used resources |
 | Invalid resource IDs | Only reference IDs that exist in resources.yaml |
+| Using `animation` type | Removed — Media has no animation tool. Use `sprite` for character animation |
+| Missing `components` section | motion-graphics elements must be explicitly defined, not left for Builder to guess |
+| Writing implementation details in components | components description should only contain visual intent, not CSS/React code |
 | Missing required cinematic fields | Every shot must have ALL fields: framing, camera_movement, pacing, visual_tension, audio_visual_relation, transition_in (struct), breathing |
 | Invalid enum values | framing must be one of: ECU/CU/MCU/MS/MLS/LS/ELS; camera_movement must be one of the defined enum values; pacing must be slow/medium/fast/pause |
 | visual_tension out of range | Must be numeric 0.0-1.0 |

@@ -14,7 +14,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlencode
@@ -198,7 +198,7 @@ def main():
             page=args.page,
         )
 
-        result["searched_at"] = datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z")
+        result["searched_at"] = datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
         print(f"Found {len(result['sounds'])} sounds (total available: {result['total_results']})")
 

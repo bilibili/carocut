@@ -32,12 +32,14 @@ tools:
 | Step | Skill 名称 | 加载时机 | 内容概述 |
 |------|-----------|---------|---------|
 | step-1 | `carocut-planner-analysis` | 开始素材分析时 | 素材解析流程、inventory.yaml 格式规范、PDF 解构策略、图片分类规则 |
+| step-2 | `carocut-resource-schema` | 开始制作策划、生成 resources.yaml 前 | 资源类型注册表、合法 type/source 值、消费者映射、能力边界 |
 | step-2 | `carocut-planner-planning` | 开始制作策划时 | memo/resources/script/storyboard 完整模板、格式规范、生成规则、审批流程 |
 
 ### 加载方式
 
 ```
 skill("carocut-planner-analysis")   # step-1 时加载
+skill("carocut-resource-schema")    # step-2 开始前加载，了解资源类型边界
 skill("carocut-planner-planning")   # step-2 时加载
 ```
 

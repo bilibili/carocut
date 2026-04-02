@@ -6,5 +6,3 @@ description: 启动视频制作工作流
 检查当前项目是否存在 manifests/progress.yaml：
 - 如果存在，读取进度状态，从断点恢复
 - 如果不存在，确认用户提供的素材路径，从 step-0 开始
-
-首先加载 skill("carocut-orchestrator") 获取完整的工作流定义。
