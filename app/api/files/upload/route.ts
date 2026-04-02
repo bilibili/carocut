@@ -3,6 +3,8 @@ import path from "node:path"
 import fs from "node:fs/promises"
 import { getWorkspacePath, workspaceExists } from "@/lib/workspace"
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -38,6 +40,13 @@ export async function POST(req: NextRequest) {
 
     for (const entry of files) {
       if (!(entry instanceof File)) continue
+
+      if (entry.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: `File "${entry.name}" exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit` },
+          { status: 413 },
+        )
+      }
 
       // Prevent path traversal in filenames
       const safeName = path.basename(entry.name)
