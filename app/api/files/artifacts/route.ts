@@ -4,17 +4,19 @@ import fs from "node:fs/promises"
 import { getWorkspacePath, workspaceExists } from "@/lib/workspace"
 import type { Artifact, ArtifactType } from "@/lib/types"
 
-const ARTIFACT_DIRS: { subdir: string; type: ArtifactType }[] = [
-  { subdir: "outputs", type: "video" },
-  { subdir: "template-project/out", type: "video" },
-  { subdir: "manifests", type: "manifest" },
-  { subdir: "raws/images/existing", type: "image" },
-  { subdir: "raws/images/retrieved", type: "image" },
-  { subdir: "raws/images/generated", type: "image" },
-  { subdir: "raws/uploads", type: "image" },
-  { subdir: "raws/audio/bgm", type: "audio" },
-  { subdir: "raws/audio/sfx", type: "audio" },
-  { subdir: "raws/audio/vo", type: "audio" },
+const ARTIFACT_DIRS: { subdir: string; type: ArtifactType; group: string }[] = [
+  { subdir: "manifests", type: "manifest", group: "配置文件" },
+  { subdir: "raws", type: "manifest", group: "原始数据" },
+  { subdir: "outputs", type: "video", group: "导出视频" },
+  { subdir: "template-project/out", type: "video", group: "导出视频" },
+  { subdir: "raws/images/existing", type: "image", group: "已有图片" },
+  { subdir: "raws/images/retrieved", type: "image", group: "检索图片" },
+  { subdir: "raws/images/generated", type: "image", group: "生成图片" },
+  { subdir: "raws/images/crawled", type: "image", group: "爬取图片" },
+  { subdir: "raws/uploads", type: "document", group: "上传文件" },
+  { subdir: "raws/audio/bgm", type: "audio", group: "背景音乐" },
+  { subdir: "raws/audio/sfx", type: "audio", group: "音效" },
+  { subdir: "raws/audio/vo", type: "audio", group: "配音" },
 ]
 
 const IMAGE_MIME: Record<string, string> = {
@@ -107,6 +109,8 @@ export async function GET(req: NextRequest) {
           effectiveType = "manifest"
         } else if (dir.type === "image" && !IMAGE_EXTS.has(ext)) {
           effectiveType = DOCUMENT_EXTS.has(ext) ? "document" : "manifest"
+        } else if (dir.type === "document" && IMAGE_EXTS.has(ext)) {
+          effectiveType = "image"
         }
 
         artifacts.push({
@@ -114,14 +118,25 @@ export async function GET(req: NextRequest) {
           name: fileName,
           path: filePath,
           type: effectiveType,
+          group: dir.group,
           mime: guessMime(effectiveType, ext),
           createdAt,
         })
       }
     }
 
-    // Sort newest first
-    artifacts.sort((a, b) => b.createdAt - a.createdAt)
+    // Sort by group order (ARTIFACT_DIRS order), then newest first within group
+    const groupOrder = new Map<string, number>()
+    for (let i = 0; i < ARTIFACT_DIRS.length; i++) {
+      const g = ARTIFACT_DIRS[i].group
+      if (!groupOrder.has(g)) groupOrder.set(g, groupOrder.size)
+    }
+    artifacts.sort((a, b) => {
+      const ga = groupOrder.get(a.group) ?? 999
+      const gb = groupOrder.get(b.group) ?? 999
+      if (ga !== gb) return ga - gb
+      return b.createdAt - a.createdAt
+    })
 
     return NextResponse.json(artifacts)
   } catch (err) {

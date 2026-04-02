@@ -69,6 +69,7 @@ export interface Artifact {
   name: string
   path: string
   type: ArtifactType
+  group: string
   mime?: string
   createdAt: number
 }
