@@ -4,6 +4,7 @@ import { useEffect, useReducer } from "react"
 import type { Artifact } from "@/lib/types"
 import { MarkdownViewer } from "./markdown-viewer"
 import { YamlViewer } from "./yaml-viewer"
+import { JsonViewer } from "./json-viewer"
 import { ImageViewer } from "./image-viewer"
 import { AudioPlayer } from "./audio-player"
 import { VideoPlayer } from "./video-player"
@@ -108,6 +109,7 @@ export function DetailPanel({ artifact, sessionId, showStudio }: DetailPanelProp
               <>
                 {artifact.name.endsWith(".md") ? <MarkdownViewer content={textContent} />
                   : artifact.name.endsWith(".yaml") || artifact.name.endsWith(".yml") ? <YamlViewer content={textContent} />
+                  : artifact.name.endsWith(".json") ? <JsonViewer content={textContent} />
                   : <pre className="overflow-auto whitespace-pre-wrap px-6 py-5 text-sm text-[#1E293B] font-mono leading-relaxed">{textContent}</pre>}
               </>
             )}
