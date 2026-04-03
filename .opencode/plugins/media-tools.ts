@@ -6,8 +6,8 @@ import { loadEnv, run } from "../tools/_utils"
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
-function getCacheDir(worktree: string): string {
-  const dir = path.join(worktree, ".opencode", ".cache", "image-search")
+function getCacheDir(worktree: string, type: string = "image-search"): string {
+  const dir = path.join(worktree, ".opencode", ".cache", type)
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   return dir
 }
@@ -76,7 +76,7 @@ export const MediaToolsPlugin: Plugin = async (ctx) => {
       },
       async execute(args, context) {
         const env = await loadEnv(context.worktree)
-        const cacheDir = getCacheDir(context.worktree)
+        const cacheDir = getCacheDir(context.worktree, "image-search")
         const source = args.source ?? defaultSource
         const key = cacheKey({ query: args.query, source, count: args.count, orientation: args.orientation, color: args.color, page: args.page })
 
@@ -92,6 +92,59 @@ export const MediaToolsPlugin: Plugin = async (ctx) => {
         if (args.count) cmd.push("--count", String(args.count))
         if (args.orientation) cmd.push("--orientation", args.orientation)
         if (args.color) cmd.push("--color", args.color)
+        if (args.page) cmd.push("--page", String(args.page))
+        if (args.output) cmd.push("--output", args.output)
+        const result = await run(cmd, { env })
+        const trimmed = result.trim()
+
+        writeCache(cacheDir, key, trimmed)
+        return trimmed
+      },
+    })
+
+    // ── Video: search (reuses same PEXELS / PIXABAY keys) ──────────────
+    tools.videos_search = tool({
+      description: `在${hasPexels ? " Pexels" : ""}${hasPixabay ? " Pixabay" : ""} 搜索免费可商用的库存视频（B-Roll）。
+支持关键词搜索、方向筛选、时长筛选。
+返回 JSON 格式结果，包含视频 URL（HD/SD）、缩略图、尺寸、时长、创作者信息。
+搜索策略：先用英文关键词搜索，如果结果不足则尝试同义词扩展。
+结果可保存为 JSON 文件供后续处理。`,
+      args: {
+        query: tool.schema.string().describe("搜索关键词（推荐英文），如 'aerial city skyline'"),
+        source: tool.schema.enum(sources).optional()
+          .describe(`视频来源，默认 ${defaultSource}`),
+        count: tool.schema.number().optional()
+          .describe(`期望结果数量，默认 3${hasPexels ? "，Pexels 最大 80" : ""}${hasPixabay ? "，Pixabay 最大 200" : ""}`),
+        orientation: tool.schema.enum(["landscape", "portrait", "square", "horizontal", "vertical"]).optional()
+          .describe("视频方向，视频制作通常选 landscape"),
+        min_duration: tool.schema.number().optional()
+          .describe("最短时长（秒）"),
+        max_duration: tool.schema.number().optional()
+          .describe("最长时长（秒）"),
+        page: tool.schema.number().optional()
+          .describe("结果页码，默认 1"),
+        output: tool.schema.string().optional()
+          .describe("保存搜索结果的 JSON 文件绝对路径"),
+      },
+      async execute(args, context) {
+        const env = await loadEnv(context.worktree)
+        const cacheDir = getCacheDir(context.worktree, "video-search")
+        const source = args.source ?? defaultSource
+        const key = cacheKey({ query: args.query, source, count: args.count, orientation: args.orientation, min_duration: args.min_duration, max_duration: args.max_duration, page: args.page })
+
+        const cached = readCache(cacheDir, key)
+        if (cached) {
+          if (args.output) writeFileSync(args.output, cached, "utf-8")
+          return cached
+        }
+
+        const script = path.join(context.worktree, ".opencode/scripts/search_videos.py")
+        const cmd = ["python3", script, "--query", args.query]
+        cmd.push("--source", source)
+        if (args.count) cmd.push("--count", String(args.count))
+        if (args.orientation) cmd.push("--orientation", args.orientation)
+        if (args.min_duration) cmd.push("--min-duration", String(args.min_duration))
+        if (args.max_duration) cmd.push("--max-duration", String(args.max_duration))
         if (args.page) cmd.push("--page", String(args.page))
         if (args.output) cmd.push("--output", args.output)
         const result = await run(cmd, { env })

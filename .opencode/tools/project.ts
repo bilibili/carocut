@@ -49,12 +49,10 @@ charts（Recharts 图表）、gif（GIF 支持）、captions（字幕）。`,
 export const migrate = tool({
   description: `将 raws/ 目录的素材迁移到 Remotion 项目的 public/ 目录，
 并自动生成三个 TypeScript 文件：
-- resourceMap.ts：所有素材路径常量（IMAGES, AUDIO, VOICEOVER）
-- constants.ts：视频配置（分辨率、FPS、配色、字体、字号标准）
-- timing.ts：帧计算工具函数（secToFrames, msToFrames 等）
-可用 --skip-copy 仅重新生成 TypeScript 文件而不复制素材。
-需要读取 manifests/resources.yaml 获取资源定义，
-raws/audio/vo/durations.json 获取 VO 时序数据。`,
+- resourceMap.ts：所有素材路径常量（IMAGES, VOICEOVER, BGM, SFX, VIDEO, VO_DURATIONS）
+- constants.ts：视频配置、配色、字体、PACING、TENSION_CONFIG（Agent 需 edit COLORS 和 FONTS）
+- timing.ts：帧计算工具函数（secToFrames, msToFrames, pacingMultiplier, tensionToSpringConfig, audioOffsetFrames 等）
+可用 --skip-copy 仅重新生成 TypeScript 文件而不复制素材。`,
 
   args: {
     project_path: tool.schema.string()
@@ -75,7 +73,7 @@ raws/audio/vo/durations.json 获取 VO 时序数据。`,
 
   async execute(args, context) {
     const script = path.join(context.worktree, ".opencode/scripts/migrate_assets.py")
-    const cmd = ["python3", script]
+    const cmd = ["python3", script, "--project-path", args.project_path]
     if (args.raws) cmd.push("--raws", args.raws)
     if (args.public_dir) cmd.push("--public", args.public_dir)
     if (args.resources) cmd.push("--resources", args.resources)

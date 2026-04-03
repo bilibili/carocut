@@ -31,20 +31,12 @@ Processes entire script.md and generates all voiceover files:
 
 ### Voice Selection
 
+完整 voice 列表和选择建议见 `references/edge-tts.md`。
+
 | Input | Meaning | Recommendation |
 |------|---------|----------------|
 | `default` | Default alias | Maps to `zh-CN-XiaoxiaoNeural` |
-| `zh-CN-XiaoxiaoNeural` | Recommended default voice (Female) | General narration, explainers, professional content |
-| `zh-CN-YunxiNeural` | Male | Lively Sunshine |
-| any valid edge-tts voice ID | Direct pass-through | Use when a project requires a specific Microsoft voice |
-
-### Tone Compatibility
-
-The previous internal TTS backend supported explicit `tone` / `emo_weight` controls. Edge TTS does not expose equivalent emotion labels in this workflow.
-
-- Existing `tone` fields may remain in old configs, but the current backend ignores them
-- Use `pacing`-driven speed control to shape delivery
-- Keep narration copy neutral and let storyboard rhythm carry emphasis
+| any valid edge-tts voice ID | Direct pass-through | 根据项目风格从 `references/edge-tts.md` 中选择 |
 
 ### Speed Adjustment Rules
 

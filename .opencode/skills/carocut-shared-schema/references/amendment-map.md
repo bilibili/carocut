@@ -1,13 +1,10 @@
----
-name: carocut-orchestrator
-description: Amendment dependency map。用户请求增量修改时加载，查询哪些步骤需要重新执行。
----
-
 # Amendment Dependency Map
 
 用户请求修改时，根据变更类型查找需要重新执行的步骤链。
 
-按影响链顺序逐个调度 subagent，每个步骤使用 `mode: "incremental"`。
+Orchestrator 按影响链顺序逐个调度 subagent，每个步骤使用 `mode: "incremental"`。
+
+以下 action 类型对应 dispatch-context.md 中 `amendment.type` 字段的合法值：
 
 ```yaml
 amendment_dependencies:

@@ -41,7 +41,7 @@ digraph visual_decision {
 
 ## Resource Source Types
 
-资源类型完整定义见 `carocut-resource-schema` skill。Media 只处理 visual 类型（image/video/sprite），不处理 data 和 components 类型。
+资源类型完整定义见 `carocut-shared-schema` skill。Media 只处理 visual 类型（image/video/sprite），不处理 data 和 components 类型。
 
 | Source | When to Use |
 |--------|-------------|
@@ -72,7 +72,7 @@ When the storyboard requires motion footage (product demos, b-roll, ambient shot
 
 #### Video Search Strategy
 
-- Use **Pexels Video API** for stock video retrieval
+- Use **Pexels** for STOCK video retrieval when using tool `videos_search`
 - Search keywords follow the same English-keyword rules as image search
 - Filter by duration range when specified in the resource definition
 - Prefer HD (1080p) or higher resolution

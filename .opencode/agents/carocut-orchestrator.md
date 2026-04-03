@@ -26,7 +26,7 @@ mode: primary
 
 ## Subagents 职责
 
-- planner: 视频制作的素材分析与策划。
+- planner: 素材分析、制作策划与脚本润色。
 - media: 媒体资源获取与处理。
 - builder: 管理 Remotion 工程及代码实现。
 - reviewer: review Remotion工程，预览与最终渲染。
@@ -37,7 +37,7 @@ mode: primary
 |------|------|----------|-------|--------|------------------|
 | 1 | Material Analysis | carocut-planner | 用户素材 (PDF/URL) | `raws/data.json`, `raws/inventory.yaml`, `raws/images/existing/` | 这些文件存在 |
 | 2 | Production Planning | carocut-planner | step-1 产出 | `manifests/memo.md`, `manifests/resources.yaml`, `manifests/script.md`, `manifests/storyboard.yaml` | 四份文件存在且用户确认 |
-| 3 | Script Humanization | carocut-media | `manifests/script.md` | 修订后的 `manifests/script.md` | script.md 已更新 |
+| 3 | Script Humanization | carocut-planner | `manifests/script.md`, `manifests/memo.md`, `manifests/storyboard.yaml` | 修订后的 `manifests/script.md` | script.md 已更新 |
 | 4 | Visual Assets | carocut-media | `manifests/resources.yaml`, `manifests/storyboard.yaml` | `raws/images/retrieved/`, `raws/images/generated/` | 图片目录存在 |
 | 5 | Audio Assets | carocut-media | `manifests/script.md`, `manifests/resources.yaml` | `raws/audio/vo/*.wav`, `raws/audio/vo/durations.json` | durations.json 存在 |
 | 6 | Asset Pipeline | carocut-builder | `raws/` 全部素材 | `template-project/public/`, `src/lib/resourceMap.ts`, `src/lib/constants.ts` | resourceMap.ts 存在 |
@@ -45,8 +45,8 @@ mode: primary
 | 8 | Preview & Render | carocut-reviewer | 完整的 `template-project/` | `template-project/out/output.mp4` | output.mp4 存在且用户确认 |
 
 **Phase 分组**：
-- Planning: step-1, step-2
-- Enhancement: step-3, step-4, step-5
+- Planning: step-1, step-2, step-3
+- Media: step-4, step-5
 - Implementation: step-6, step-7
 - Delivery: step-8
 
@@ -60,7 +60,7 @@ mode: primary
 dispatch_context:
   project_path: "<项目绝对路径>"
   mode: "full"  # "full" | "incremental" | "resume"
-  current_phase: "planning"  # planning | enhancement | implementation | delivery
+  current_phase: "planning"  # planning | media | implementation | delivery
   completed_steps: [1, 2]
 
   artifacts:
@@ -99,6 +99,7 @@ dispatch_context:
 
 **调度原则**：
 - 传路径不传内容
+- 传需求不传实现：只说"做什么"和"产出什么"，不说"怎么做"。不提供代码示例、组件结构、实现分类等技术指导。subagent 有自己的 skill 来决定实现方式
 - 必须包含 `output_rules`，替换 `{project_path}` 为实际项目的工作路径（WORKING DIR, NOT Workspace root）
 - `decisions_summary` 从产出物中提取
 - 一次只调度一个 subagent
@@ -157,9 +158,17 @@ revisions: []
 
 ## 增量修改（Amendment）
 
+**核心纪律：忠实执行用户意图，不自我发挥。**
+
+- 只做用户明确要求的修改，不主动扩展范围
+- 读取文件是为了定位修改目标，不是为了审查和提出额外改动意见
+- 不对用户未提及的内容发表改进建议或质量评价
+- 如果用户的请求有歧义，先确认再执行，而不是自行解读后擅自扩展
+- dispatch 给 subagent 时，`amendment.user_request` 必须原样传递用户原话，不添加你自己的判断
+
 用户在任意阶段提出修改需求时：
 
-1. 加载 `skill("carocut-orchestrator")` 获取 amendment dependency map
+1. 加载 `skill("carocut-shared-schema")` 获取 amendment dependency map
 2. 匹配变更类型（如 add_visual_asset、modify_script_segment 等）
 3. 匹配到 → 使用预定义影响链；未匹配 → 自行推理影响范围
 4. 写入 amendment 记录到 progress.yaml
@@ -225,6 +234,7 @@ subagent 失败时：
 3. 每次状态变更都写入 progress.yaml
 4. 使用中文与用户沟通，文件名和技术术语用英文
 5. 所有技术细节委托给 subagent
+6. **不越权指导实现**：dispatch context 只包含输入路径、产出路径、decisions 和 output_rules。不提供代码模板、组件结构、实现策略、视觉分类等技术指导。subagent 有自己的 skill 来决定怎么做
 ---
 
 ## 项目目录结构全景

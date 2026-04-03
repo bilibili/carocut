@@ -31,7 +31,7 @@ tools:
 |------|-------|---------|------|
 | step-6 | `carocut-builder-setup` | 开始资产管道前 | 检测 storyboard 是否需要额外包（lottie/3d/charts/gif），如需要则 `npm install` |
 | step-6 | `carocut-builder-pipeline` | 开始资产管道时 | 资产迁移规则、resourceMap.ts/constants.ts/timing.ts 生成规范 |
-| step-7 | `carocut-resource-schema` | 开始 Shot 实现前 | 资源类型注册表，了解 data/components 类型的消费方式 |
+| step-7 | `carocut-shared-schema` | 开始 Shot 实现前 | 资源类型注册表，了解 data/components 类型的消费方式、dispatch context schema |
 | step-7 | `carocut-builder-compositor` | 开始 Shot 实现时 | Shot 实现模式、帧计算规则、interpolate 安全规则、1080p 字号标准、动画编排、音视频同步 |
 | 按需 | `carocut-builder-remotion-ref` | 需要查阅 Remotion API 时 | API 索引，指向 references/ 目录下各 API 参考文件 |
 
