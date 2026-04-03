@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       }
 
       const config = configResult.data
-      const defaultModel = config?.model || process.env.OPENCODE_MODEL
+      const defaultModel = config?.small_model || config?.model || process.env.OPENCODE_MODEL
 
       if (!defaultModel) {
         return NextResponse.json(
