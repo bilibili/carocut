@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import type { QuestionRequest } from "@/lib/types"
 
 interface QuestionDialogProps {
@@ -142,10 +144,12 @@ export function QuestionDialog({ request, onReply }: QuestionDialogProps) {
                 {currentQuestion.header}
               </div>
             )}
-            <p className="text-sm text-[#1E293B] mb-2">
-              {currentQuestion.question}
+            <div className="prose prose-sm max-w-none text-[#1E293B] mb-2">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {currentQuestion.question}
+              </ReactMarkdown>
               {isMulti && <span className="text-[#94A3B8] ml-1">(multiple)</span>}
-            </p>
+            </div>
 
             {currentQuestion.options && currentQuestion.options.length > 0 && (
               <div className="mb-2 flex flex-col gap-1.5">

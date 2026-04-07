@@ -302,10 +302,12 @@ function QuestionToolView({ part }: { part: ToolPart }) {
               </div>
             )}
             {currentQuestion.question && (
-              <p className="text-sm text-[#1E293B] mb-1.5">
-                {currentQuestion.question}
+              <div className="prose prose-sm max-w-none text-[#1E293B] mb-1.5">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {currentQuestion.question}
+                </ReactMarkdown>
                 {isMulti && <span className="text-[#94A3B8] ml-1">(multiple)</span>}
-              </p>
+              </div>
             )}
             {currentQuestion.options && currentQuestion.options.length > 0 && (
               <div className="flex flex-col gap-1">
@@ -437,10 +439,12 @@ function QuestionToolView({ part }: { part: ToolPart }) {
               </div>
             )}
             {q.question && (
-              <p className="text-sm text-[#1E293B] mb-1.5">
-                {q.question}
+              <div className="prose prose-sm max-w-none text-[#1E293B] mb-1.5">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {q.question}
+                </ReactMarkdown>
                 {q.multiple && <span className="text-[#94A3B8] ml-1">(multiple)</span>}
-              </p>
+              </div>
             )}
             {q.options && q.options.length > 0 && (
               <div className="flex flex-col gap-1">
