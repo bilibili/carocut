@@ -12,7 +12,7 @@
 
 .venv/
 .carocut/
-
+.opencode/.cache
 # testing
 /coverage
 
