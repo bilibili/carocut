@@ -13,6 +13,7 @@ const ARTIFACT_DIRS: { subdir: string; type: ArtifactType; group: string }[] = [
   { subdir: "raws/images/retrieved", type: "image", group: "检索图片" },
   { subdir: "raws/images/generated", type: "image", group: "生成图片" },
   { subdir: "raws/images/crawled", type: "image", group: "爬取图片" },
+  { subdir: "raws/videos/retrieved", type: "video", group: "检索视频" },
   { subdir: "raws/uploads", type: "document", group: "上传文件" },
   { subdir: "raws/audio/bgm", type: "audio", group: "背景音乐" },
   { subdir: "raws/audio/sfx", type: "audio", group: "音效" },
