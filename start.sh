@@ -30,6 +30,24 @@ if [ ! -f "opencode.json" ]; then
     exit 1
 fi
 
+# 检查 nodejs 环境
+if ! command -v pnpm &> /dev/null; then
+    # 尝试激活 nvm
+    if [ -s "$HOME/.nvm/nvm.sh" ]; then
+        source "$HOME/.nvm/nvm.sh" --no-use
+        nvm use default 2>/dev/null
+    elif [ -s "/opt/homebrew/opt/nvm/nvm.sh" ]; then
+        source "/opt/homebrew/opt/nvm/nvm.sh" --no-use
+        nvm use default 2>/dev/null
+    fi
+fi
+
+if ! command -v pnpm &> /dev/null; then
+    echo "❌ 未找到 pnpm，请先安装："
+    echo "   npm install -g pnpm"
+    exit 1
+fi
+
 
 # 检查 bootstrap 状态
 if [ ! -f ".carocut/bootstrap.yaml" ]; then
