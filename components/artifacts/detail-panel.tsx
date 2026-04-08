@@ -116,7 +116,7 @@ export function DetailPanel({ artifact, sessionId, showStudio }: DetailPanelProp
           </>
         )}
         {artifact.type === "image" && <ImageViewer key={artifact.id} src={assetUrl} alt={artifact.name} />}
-        {artifact.type === "audio" && <AudioPlayer key={artifact.id} src={assetUrl} name={artifact.name} />}
+        {artifact.type === "audio" && <AudioPlayer key={artifact.id} src={assetUrl} name={artifact.name} path={artifact.path} />}
         {artifact.type === "video" && <VideoPlayer key={artifact.id} src={assetUrl} name={artifact.name} />}
         {artifact.type === "document" && (
           <iframe key={artifact.id} src={assetUrl} title={artifact.name} className="h-full w-full border-0" />

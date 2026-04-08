@@ -82,21 +82,35 @@ export async function GET(req: NextRequest) {
     const workspace = getWorkspacePath(sessionId)
     const artifacts: Artifact[] = []
 
+    // Collect all subdir paths so we can skip overlapping entries
+    const allSubdirs = ARTIFACT_DIRS.map((d) => d.subdir)
+
     for (const dir of ARTIFACT_DIRS) {
       const fullDir = path.join(workspace, dir.subdir)
-      let fileNames: string[]
+      let entries: string[]
       try {
-        fileNames = await fs.readdir(fullDir)
+        entries = await fs.readdir(fullDir, { recursive: true })
       } catch {
         continue
       }
 
-      for (const fileName of fileNames) {
-        const fullPath = path.join(fullDir, fileName)
+      // Find subdirs that are children of this dir (to skip them)
+      const childSubdirs = allSubdirs
+        .filter((s) => s !== dir.subdir && s.startsWith(dir.subdir + "/"))
+        .map((s) => s.slice(dir.subdir.length + 1))
+
+      for (const relEntry of entries) {
+        // Skip files that belong to a more specific ARTIFACT_DIRS entry
+        if (childSubdirs.some((child) => relEntry === child || relEntry.startsWith(child + "/"))) {
+          continue
+        }
+
+        const fullPath = path.join(fullDir, relEntry)
         const stat = await fs.stat(fullPath).catch(() => null)
         if (!stat || !stat.isFile()) continue
 
-        const filePath = path.join(dir.subdir, fileName)
+        const fileName = relEntry
+        const filePath = path.join(dir.subdir, relEntry)
         const ext = path.extname(fileName).toLowerCase()
 
         // For video directories, only include actual video files
