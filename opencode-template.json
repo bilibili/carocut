@@ -87,12 +87,16 @@
         "websearch": "allow",
         "write": {
           "*": "deny",
+          "**/raws/*.json": "allow",
+          "**/raws/*.yaml": "allow",
           "**/manifests/*.md": "allow",
           "**/manifests/storyboard.yaml": "allow",
           "**/manifests/resources.yaml": "allow"
         },
         "edit": {
           "*": "deny",
+          "**/raws/*.json": "allow",
+          "**/raws/*.yaml": "allow",
           "**/manifests/*.md": "allow",
           "**/manifests/storyboard.yaml": "allow",
           "**/manifests/resources.yaml": "allow"
