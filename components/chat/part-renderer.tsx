@@ -1,10 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, type ComponentProps } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism"
 import Image from "next/image"
 import type {
   Part,
@@ -20,6 +18,10 @@ import type {
   ToolStateRunning,
 } from "@/lib/types"
 import { useQuestionContext } from "./question-context"
+import { CodeSnippet } from "./code-snippet"
+import { buildToolInputSections, type ToolInputSection } from "./tool-input-sections"
+import { buildToolOutputSections } from "./tool-output-sections"
+import { formatMarkdownImageFallback, isRelativeMarkdownImageSource } from "./markdown-image"
 
 // ---------------------------------------------------------------------------
 // Shared
@@ -39,6 +41,44 @@ function ChevronIcon({ open }: { open: boolean }) {
   )
 }
 
+const markdownComponents = {
+  code({ className, children, ...rest }: ComponentProps<"code"> & { className?: string }) {
+    const match = /language-(\w+)/.exec(className || "")
+    const codeString = String(children).replace(/\n$/, "")
+
+    if (match) {
+      return <CodeSnippet code={codeString} languageHint={match[1]} maxHeight={320} />
+    }
+    if (codeString.includes("\n")) {
+      return <CodeSnippet code={codeString} maxHeight={320} />
+    }
+    return (
+      <code className={className} {...rest}>
+        {children}
+      </code>
+    )
+  },
+  img({ src, alt }: ComponentProps<"img">) {
+    if (isRelativeMarkdownImageSource(src)) {
+      return (
+        <code>{formatMarkdownImageFallback(alt, src)}</code>
+      )
+    }
+
+    if (!src) return null
+
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={src} alt={alt ?? ""} className="w-full h-auto rounded-lg border border-[#E2E8F0]" />
+  },
+  table({ children }: ComponentProps<"table">) {
+    return (
+      <div className="overflow-x-auto -mx-3 px-3">
+        <table className="min-w-full">{children}</table>
+      </div>
+    )
+  },
+}
+
 // ---------------------------------------------------------------------------
 // TextPartView
 // ---------------------------------------------------------------------------
@@ -53,44 +93,7 @@ function TextPartView({ part, isUser }: { part: TextPart; isUser?: boolean }) {
   }
   return (
     <div className="prose prose-sm max-w-none prose-p:text-[#1E293B] prose-p:leading-relaxed prose-headings:text-[#1E293B] prose-a:text-[#2563EB] prose-strong:text-[#1E293B] prose-strong:font-semibold prose-code:text-[#1E293B] prose-code:bg-[#F1F5F9] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-[#F8FAFC] prose-pre:border prose-pre:border-[#E2E8F0] prose-pre:rounded-lg">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          code({ className, children, node, ...rest }) {
-            const match = /language-(\w+)/.exec(className || "")
-            const codeString = String(children).replace(/\n$/, "")
-            if (match) {
-              return (
-                <SyntaxHighlighter
-                  style={oneLight}
-                  language={match[1]}
-                  PreTag="div"
-                  customStyle={{
-                    background: "#F8FAFC",
-                    border: "1px solid #E2E8F0",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                  }}
-                >
-                  {codeString}
-                </SyntaxHighlighter>
-              )
-            }
-            return (
-              <code className={className} {...rest}>
-                {children}
-              </code>
-            )
-          },
-          table({ children }) {
-            return (
-              <div className="overflow-x-auto -mx-3 px-3">
-                <table className="min-w-full">{children}</table>
-              </div>
-            )
-          },
-        }}
-      >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
         {part.text}
       </ReactMarkdown>
     </div>
@@ -140,6 +143,32 @@ function formatInput(input: Record<string, unknown>): string {
     if (typeof value === "string") return `${key}: ${value}`
   }
   return JSON.stringify(input, null, 2)
+}
+
+function StructuredToolInputView({ sections }: { sections: ToolInputSection[] }) {
+  return (
+    <div className="flex flex-col gap-2">
+      {sections.map((section) => (
+        <div key={`${section.kind}-${section.label}`}>
+          <div className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider mb-1">
+            {section.label}
+          </div>
+          {section.kind === "field" ? (
+            <div className="font-mono text-xs text-[#1E293B] leading-relaxed bg-[#F8FAFC] rounded-lg px-2.5 py-2 border border-[#E2E8F0] break-all">
+              {section.value}
+            </div>
+          ) : (
+            <CodeSnippet
+              code={section.value}
+              label={section.label}
+              languageHint={section.language}
+              maxHeight={192}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -303,7 +332,7 @@ function QuestionToolView({ part }: { part: ToolPart }) {
             )}
             {currentQuestion.question && (
               <div className="prose prose-sm max-w-none text-[#1E293B] mb-1.5">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                   {currentQuestion.question}
                 </ReactMarkdown>
                 {isMulti && <span className="text-[#94A3B8] ml-1">(multiple)</span>}
@@ -440,7 +469,7 @@ function QuestionToolView({ part }: { part: ToolPart }) {
             )}
             {q.question && (
               <div className="prose prose-sm max-w-none text-[#1E293B] mb-1.5">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                   {q.question}
                 </ReactMarkdown>
                 {q.multiple && <span className="text-[#94A3B8] ml-1">(multiple)</span>}
@@ -631,7 +660,7 @@ function TaskToolView({ part }: { part: ToolPart }) {
                 Result
               </div>
               <div className="prose prose-sm max-w-none prose-p:text-[#1E293B] prose-p:text-xs prose-p:leading-relaxed">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                   {(state as ToolStateCompleted).output
                     .replace(/^Result\s*\ntask_id:\s*\S+[^\n]*\n*/m, "")
                     .replace(/<\/?task_result>/g, "")
@@ -647,9 +676,7 @@ function TaskToolView({ part }: { part: ToolPart }) {
               <div className="text-[10px] font-semibold text-[#DC2626] uppercase tracking-wider mb-1">
                 Error
               </div>
-              <pre className="whitespace-pre-wrap font-mono text-xs text-[#DC2626] leading-relaxed">
-                {(state as ToolStateError).error}
-              </pre>
+              <CodeSnippet code={(state as ToolStateError).error} maxHeight={192} tone="error" />
             </div>
           )}
         </div>
@@ -744,6 +771,7 @@ function ToolPartView({ part }: { part: ToolPart }) {
       : state.status === "running"
         ? (state as ToolStateRunning).title
         : undefined
+  const inputFilePath = typeof state.input.filePath === "string" ? state.input.filePath : null
 
   return (
     <div className="rounded-lg bg-[#F1F5F9] border border-[#E2E8F0] overflow-hidden">
@@ -774,9 +802,20 @@ function ToolPartView({ part }: { part: ToolPart }) {
             <div className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider mb-1">
               Input
             </div>
-            <pre className="whitespace-pre-wrap font-mono text-xs text-[#1E293B] leading-relaxed bg-[#F8FAFC] rounded-lg px-2.5 py-2 border border-[#E2E8F0] max-h-48 overflow-y-auto">
-              {formatInput(state.input)}
-            </pre>
+            {(() => {
+              const sections = buildToolInputSections(part.tool, state.input)
+              if (sections) {
+                return <StructuredToolInputView sections={sections} />
+              }
+              return (
+                <CodeSnippet
+                  code={formatInput(state.input)}
+                  languageHint={Object.keys(state.input).length > 1 ? "json" : null}
+                  filePath={inputFilePath}
+                  maxHeight={192}
+                />
+              )
+            })()}
           </div>
 
           {/* Output — completed */}
@@ -785,9 +824,22 @@ function ToolPartView({ part }: { part: ToolPart }) {
               <div className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider mb-1">
                 Output
               </div>
-              <pre className="whitespace-pre-wrap font-mono text-xs text-[#1E293B] leading-relaxed bg-[#F8FAFC] rounded-lg px-2.5 py-2 border border-[#E2E8F0] max-h-64 overflow-y-auto">
-                {(state as ToolStateCompleted).output || "(empty)"}
-              </pre>
+              {(() => {
+                const output = (state as ToolStateCompleted).output || "(empty)"
+                const sections = buildToolOutputSections(part.tool, output)
+
+                if (sections) {
+                  return <StructuredToolInputView sections={sections} />
+                }
+
+                return (
+                  <CodeSnippet
+                    code={output}
+                    filePath={inputFilePath}
+                    maxHeight={256}
+                  />
+                )
+              })()}
             </div>
           )}
 
@@ -797,9 +849,12 @@ function ToolPartView({ part }: { part: ToolPart }) {
               <div className="text-[10px] font-semibold text-[#DC2626] uppercase tracking-wider mb-1">
                 Error
               </div>
-              <pre className="whitespace-pre-wrap font-mono text-xs text-[#DC2626] leading-relaxed bg-[#FEF2F2] rounded-lg px-2.5 py-2 border border-[#FEE2E2] max-h-48 overflow-y-auto">
-                {(state as ToolStateError).error}
-              </pre>
+              <CodeSnippet
+                code={(state as ToolStateError).error}
+                filePath={inputFilePath}
+                maxHeight={192}
+                tone="error"
+              />
             </div>
           )}
         </div>

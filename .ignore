@@ -1,1 +1,4 @@
-!workspaces/
+!workspaces/*/manifests
+!workspaces/*/raws
+!workspaces/*/template-project
+!workspaces/*/template-project/out
