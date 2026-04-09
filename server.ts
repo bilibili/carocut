@@ -1,7 +1,8 @@
 import { createServer, type IncomingMessage } from "node:http"
 import next from "next"
 import httpProxy from "http-proxy"
-import { getStudioInstance, getAllRunningStudios } from "./lib/studio-manager"
+import { getStudioInstance, getAllRunningStudios, isStudioReady, startStudio } from "./lib/studio-manager"
+import { getWorkspacePath } from "./lib/workspace"
 
 const port = parseInt(process.env.PORT || "3000", 10)
 const dev = process.env.NODE_ENV !== "production"
@@ -116,14 +117,21 @@ function getStaticHashMap(): Map<string, string> {
   return (globalThis as Record<string, unknown>)[HASH_MAP_KEY] as Map<string, string>
 }
 
-function resolveProxy(req: IncomingMessage): { sessionId: string; path: string; port: number } | null {
+async function resolveProxy(req: IncomingMessage): Promise<{ sessionId: string; path: string; port: number } | null> {
   const url = req.url || ""
 
   // 1. Direct path match: /studio-proxy/{sessionId}/...
   const pathMatch = url.match(/^\/studio-proxy\/([^/]+)(?:\/(.*))?$/)
   if (pathMatch) {
     const [, sessionId, rest = ""] = pathMatch
-    const instance = getStudioInstance(sessionId)
+    let instance = getStudioInstance(sessionId)
+
+    // Auto-restart if idle timeout stopped the studio
+    if (!instance && isStudioReady(sessionId)) {
+      console.log(`[studio-proxy] Auto-restarting idle studio for session ${sessionId}`)
+      instance = await startStudio(sessionId, getWorkspacePath(sessionId))
+    }
+
     if (instance?.status === "running") {
       return { sessionId, path: "/" + rest, port: instance.port }
     }
@@ -189,8 +197,8 @@ function resolveProxy(req: IncomingMessage): { sessionId: string; path: string; 
 }
 
 app.prepare().then(() => {
-  const server = createServer((req, res) => {
-    const target = resolveProxy(req)
+  const server = createServer(async (req, res) => {
+    const target = await resolveProxy(req)
     if (target) {
       // Tag the request so proxyRes can identify studio HTML responses
       ;(req as IncomingMessage & { __studioSession?: string }).__studioSession = target.sessionId
@@ -202,8 +210,8 @@ app.prepare().then(() => {
   })
 
   // WebSocket upgrade for Remotion Studio HMR
-  server.on("upgrade", (req, socket, head) => {
-    const target = resolveProxy(req)
+  server.on("upgrade", async (req, socket, head) => {
+    const target = await resolveProxy(req)
     if (target) {
       req.url = target.path
       proxy.ws(req, socket, head, { target: `http://127.0.0.1:${target.port}` })
