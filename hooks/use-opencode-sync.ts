@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react"
 import { useAgentEvents } from "./use-agent-events"
+import { deriveEffectiveSessionStatus } from "./session-status"
 import { buildPromptParts, type UploadedPromptFile } from "@/lib/prompt-parts"
 import type {
   Message,
@@ -484,11 +485,12 @@ export function useOpenCodeSync(sessionId: string | null) {
   )
 
   const pendingInteraction = pendingQueue[0] ?? null
+  const effectiveSessionStatus = deriveEffectiveSessionStatus(sessionStatus, parts)
 
   return {
     messages,
     parts,
-    sessionStatus,
+    sessionStatus: effectiveSessionStatus,
     pendingInteraction,
     sendMessage,
     sendCommand,

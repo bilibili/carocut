@@ -167,6 +167,7 @@
       "permission": {
         "skill": {
           "*": "deny",
+          "carocut-shared-schema": "allow",
           "carocut-reviewer": "allow",
           "carocut-builder-remotion-ref": "allow"
         }
