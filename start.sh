@@ -49,12 +49,10 @@ if ! command -v pnpm &> /dev/null; then
 fi
 
 
-# 检查 bootstrap 状态
-if [ ! -f ".carocut/bootstrap.yaml" ]; then
-    echo "⚠️  未检测到 bootstrap，正在执行首次初始化..."
-    python .opencode/scripts/bootstrap.py
-    echo ""
-fi
+# 检查 / 更新 bootstrap 状态（模板更新时会自动重新初始化）
+echo "🔍 检查 bootstrap 状态..."
+python .opencode/scripts/bootstrap.py
+echo ""
 
 echo "✅ 环境检查完成"
 echo ""

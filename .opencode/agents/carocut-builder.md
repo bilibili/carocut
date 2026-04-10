@@ -18,8 +18,9 @@ tools:
 - 素材从 `raws/` 到 `template-project/public/` 的规范化迁移
 - TypeScript 类型安全的资源映射和常量系统生成
 - 基于 storyboard 的 Shot 组件实现：布局、动画、帧时序、音视频同步
-- primitives 组件库：优先使用 KenBurns、AnimatedText、AnimatedChart、Transition、BreathingSpace、SplitScreen、DynamicBackground、MaskReveal、VideoClip 实现电影感效果
-- 电影感构图：读取 storyboard 的 framing/camera_movement/pacing/visual_tension/transition_in/breathing 字段，选择对应 primitive 和参数
+- 电影感构图：读取 storyboard 的 framing/camera_movement/pacing/visual_tension/transition_in/breathing 字段，优先映射到现有 primitive，而不是重复手写效果层
+- primitives 组件库：优先使用 `src/primitives/` 中已有能力，尤其是 KenBurns、AnimatedText、AnimatedChart、Transition、BreathingSpace、SplitScreen、DynamicBackground、MaskReveal、VideoClip，CinematicBackdrop、ParticleSystem、GlitchEffect、EdgeDissolve、NeonText、FilmGrain、GlowEffect、FlashOverlay、ColorSweep
+- 新 shot 开始前先检查 `template-project/src/primitives/index.ts` 和相关 primitive 文件头注释，确认模板是否已经覆盖所需视觉能力
 
 ---
 
@@ -85,6 +86,7 @@ tools:
 4. 每个 shot：
    - 从 `durations.json` 读取对应 VO 时长（毫秒），转换为帧数作为 `durationInFrames`
    - 读取 storyboard 的 framing/camera_movement/pacing/visual_tension/transition_in/breathing 字段，选择对应 primitive
+   - 优先复用 atmosphere / distortion / stylization primitives：`ParticleSystem`、`FilmGrain`、`GlowEffect`、`GlitchEffect`、`EdgeDissolve`、`FlashOverlay`、`ColorSweep`、`NeonText`
 5. 每完成一个 shot，运行 `npx tsc --noEmit` 验证，有错误立即修复
 6. 最终运行 `npm run build` 验证整体构建
 

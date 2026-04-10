@@ -84,16 +84,18 @@ else
   fi
 
   if [ "$DOWNLOAD_OK" = false ]; then
-    echo ""
-    echo "=========================================="
-    echo "自动下载失败（可能需要代理）"
-    echo "=========================================="
-    echo ""
-    echo "请手动下载后重新运行:"
-    echo ""
-    echo "  1. 下载: ${DOWNLOAD_URL} 到 /path/to/${ZIP_NAME}"
-    echo "  2. 执行: bash scripts/browser_install.sh /path/to/${ZIP_NAME}"
-    echo ""
+    cat >&2 <<EOF
+
+==========================================
+自动下载失败（可能需要代理）
+==========================================
+
+请手动下载后重新运行:
+
+  1. 下载: ${DOWNLOAD_URL} 到 /path/to/${ZIP_NAME}
+  2. 执行: bash scripts/browser_install.sh /path/to/${ZIP_NAME}
+
+EOF
     exit 1
   fi
 fi

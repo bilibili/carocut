@@ -71,12 +71,39 @@ import {
   AnimatedChart,
   Transition,
   BreathingSpace,
+  CinematicBackdrop,
   SplitScreen,
   DynamicBackground,
   MaskReveal,
   VideoClip,
+  ParticleSystem,
+  GlitchEffect,
+  EdgeDissolve,
+  NeonText,
+  FilmGrain,
+  GlowEffect,
+  FlashOverlay,
+  ColorSweep,
 } from '../primitives';
 ```
+
+### Primitive Selection Heuristics
+
+When a shot needs one of these visual jobs, prefer the matching primitive before creating a custom component:
+
+| Visual job | Prefer these primitives |
+|-----------|-------------------------|
+| 静态图片运镜 | `KenBurns` |
+| 标题/数字/强调文字 | `AnimatedText`, `NeonText` |
+| 数据图表 | `AnimatedChart` |
+| 背景层 | `DynamicBackground`, `BreathingSpace`, `CinematicBackdrop` |
+| 氛围纹理 | `ParticleSystem`, `FilmGrain`, `GlowEffect` |
+| 失真/崩解 | `GlitchEffect`, `EdgeDissolve` |
+| 全屏强调/扫屏 | `FlashOverlay`, `ColorSweep` |
+| 几何揭示 | `MaskReveal`, `Transition` |
+| 视频素材 | `VideoClip` |
+
+**Rule:** If the shot only needs one of the jobs above, do not invent a new effect component.
 
 ### KenBurns - 静态图片运镜
 
@@ -252,6 +279,60 @@ import {
 <DynamicBackground variant="vignette" intensity={0.5} />
 ```
 
+### CinematicBackdrop / ParticleSystem / FilmGrain - 氛围层
+
+用于 breathing shot、章节间隙、低信息密度镜头的电影感底层。
+
+- `CinematicBackdrop`：克制、稀疏、中心呼吸光
+- `ParticleSystem`：漂浮/上升/径向粒子气氛
+- `FilmGrain`：全局颗粒，降低“太干净”的数字感
+
+```tsx
+<AbsoluteFill>
+  <CinematicBackdrop baseColor="#020617" glowColor={COLORS.primary} />
+  <ParticleSystem pattern="float" opacity={0.22} color="#dbeafe" />
+  <FilmGrain intensity={0.03} />
+</AbsoluteFill>
+```
+
+### GlitchEffect / EdgeDissolve - 失真层
+
+用于故障、回忆破碎、信息污染、虚实边界崩塌等镜头。
+
+```tsx
+<GlitchEffect intensity={0.35} burst burstInterval={1.6} burstDuration={0.12}>
+  <EdgeDissolve intensity={0.55} baseColor="rgba(2, 6, 23, 1)">
+    <ShotContent />
+  </EdgeDissolve>
+</GlitchEffect>
+```
+
+### NeonText / GlowEffect - 风格化标题层
+
+当 storyboard 指向 synthetic UI、警报、科技感提示、强风格标题时优先使用。
+
+```tsx
+<AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
+  <GlowEffect color="#67e8f9" intensity={0.25}>
+    <div style={{ textAlign: 'center' }}>
+      <NeonText text="SIGNAL LOST" color="cyan" flicker />
+    </div>
+  </GlowEffect>
+</AbsoluteFill>
+```
+
+### FlashOverlay / ColorSweep - 强调层
+
+用于冲击式章节切换、记忆闪回、扫屏强调，不必为这类全屏 2D 效果单独再写 transition 组件。
+
+```tsx
+<AbsoluteFill>
+  <ShotContent />
+  <ColorSweep color="#FBBF24" direction="left-to-right" />
+  <FlashOverlay color="#ffffff" intensity={0.7} />
+</AbsoluteFill>
+```
+
 ### MaskReveal - 遮罩揭示
 
 通过遮罩动画揭示内容，适合重点内容的戏剧性呈现。
@@ -310,18 +391,21 @@ import {
 | pacing | 动画 duration 和 stagger | slow=长时值+慢stagger, fast=短时值+快stagger |
 | visual_tension | spring.damping 和动画幅度 | 低张力=高damping(柔和), 高张力=低damping(弹跳) |
 | transition_in.type | Transition.type | 直接映射 |
-| breathing=true | BreathingSpace | 整个 shot 使用 BreathingSpace |
+| breathing=true | BreathingSpace / CinematicBackdrop | 低信息密度章节停顿优先使用二者之一 |
 | audio_visual_relation | Audio Sequence.from 偏移 | lead-visual: 画面提前; lead-audio: 音频提前 |
+| visual_tension ≥ 0.7 | Glow / distortion / texture layers | 优先考虑 `GlowEffect`、`GlitchEffect`、`EdgeDissolve`、`FilmGrain` |
+| synthetic / warning / HUD 风格标题 | NeonText | 不要手写发光文字阴影 |
 
 ### 电影感强制规则（MANDATORY）
 
 1. **禁止静态图片**：所有 `<Img>` 必须包裹在 `<KenBurns>` 中（除非图片是 UI 元素如图标）
 2. **禁止静态文字**：所有首次出现的文字必须使用 `<AnimatedText>`（已显示的文字可以保持静态）
 3. **禁止静态图表**：数据展示必须使用 `<AnimatedChart>`，禁止静态 Recharts
-4. **必须有动态背景**：每个 shot 的底层必须使用 `<DynamicBackground>`（任意 variant）
+4. **必须有底层氛围背景**：每个 shot 的底层必须使用 `<DynamicBackground>`、`<BreathingSpace>` 或 `<CinematicBackdrop>` 之一
 5. **暗角规则**：在非纯白背景的 shot 上叠加 `<DynamicBackground variant="vignette" intensity={0.4} />`。高张力 shot (visual_tension ≥ 0.7) 强烈建议使用。纯白背景除外。
 6. **呼吸段必须实现**：storyboard 中 breathing=true 的 shot 必须使用 `<BreathingSpace>`
 7. **呼吸段音频处理**：breathing shot 期间，BGM 应通过 `interpolate` 淡出到 volume 0.05；下一个 shot 开始时 BGM 淡入恢复。不播放旁白。
+8. **质感层优先复用**：颗粒、发光、扫屏、故障、边缘崩解优先使用 `FilmGrain`、`GlowEffect`、`ColorSweep`、`GlitchEffect`、`EdgeDissolve`
 
 ---
 
@@ -926,6 +1010,15 @@ src/
     DynamicBackground.tsx
     MaskReveal.tsx
     VideoClip.tsx
+    CinematicBackdrop.tsx
+    ParticleSystem.tsx
+    GlitchEffect.tsx
+    EdgeDissolve.tsx
+    NeonText.tsx
+    FilmGrain.tsx
+    GlowEffect.tsx
+    FlashOverlay.tsx
+    ColorSweep.tsx
   components/           # Reusable components
     index.ts           # Barrel export
     FlatDecorations.tsx

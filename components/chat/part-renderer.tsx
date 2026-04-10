@@ -21,7 +21,11 @@ import { useQuestionContext } from "./question-context"
 import { CodeSnippet } from "./code-snippet"
 import { buildToolInputSections, type ToolInputSection } from "./tool-input-sections"
 import { buildToolOutputSections } from "./tool-output-sections"
-import { formatMarkdownImageFallback, isRelativeMarkdownImageSource } from "./markdown-image"
+import {
+  formatMarkdownImageFallback,
+  isRelativeMarkdownImageSource,
+  normalizeMarkdownImageSource,
+} from "./markdown-image"
 
 // ---------------------------------------------------------------------------
 // Shared
@@ -59,16 +63,18 @@ const markdownComponents = {
     )
   },
   img({ src, alt }: ComponentProps<"img">) {
-    if (isRelativeMarkdownImageSource(src)) {
+    const normalizedSrc = normalizeMarkdownImageSource(src)
+
+    if (!normalizedSrc) return null
+
+    if (isRelativeMarkdownImageSource(normalizedSrc)) {
       return (
-        <code>{formatMarkdownImageFallback(alt, src)}</code>
+        <code>{formatMarkdownImageFallback(alt, normalizedSrc)}</code>
       )
     }
 
-    if (!src) return null
-
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={alt ?? ""} className="w-full h-auto rounded-lg border border-[#E2E8F0]" />
+    return <img src={normalizedSrc} alt={alt ?? ""} className="w-full h-auto rounded-lg border border-[#E2E8F0]" />
   },
   table({ children }: ComponentProps<"table">) {
     return (

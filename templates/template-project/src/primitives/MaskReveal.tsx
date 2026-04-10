@@ -74,7 +74,7 @@ export const MaskReveal: React.FC<MaskRevealProps> = ({
     : durationInFrames;
 
   const adjustedFrame = Math.max(0, frame - delayFrames);
-  let rawProgress = interpolate(
+  const rawProgress = interpolate(
     adjustedFrame,
     [0, Math.max(1, animFrames)],
     [0, 1],
