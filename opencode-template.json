@@ -48,6 +48,18 @@
           "carocut-builder": "allow",
           "carocut-reviewer": "allow"
         },
+        "read": {
+          "*": "deny",
+          "**/.opencode/skills/*/references/*.md": "allow",
+          "**/manifests/progress.yaml": "allow",
+          "**/manifests/*.md": "allow",
+          "**/manifests/*.yaml": "allow",
+          "**/raws/data.json": "allow",
+          "**/raws/inventory.yaml": "allow",
+          "**/raws/content.txt": "allow",
+          "**/raws/uploads": "allow",
+          "**/raws/audio/vo/durations.json": "allow"
+        },
         "write": {
           "*": "deny",
           "**/manifests/progress.yaml": "allow"
@@ -87,16 +99,16 @@
         "websearch": "allow",
         "write": {
           "*": "deny",
-          "**/raws/*.json": "allow",
-          "**/raws/*.yaml": "allow",
+          "**/raws/**/*.json": "allow",
+          "**/raws/**/*.yaml": "allow",
           "**/manifests/*.md": "allow",
           "**/manifests/storyboard.yaml": "allow",
           "**/manifests/resources.yaml": "allow"
         },
         "edit": {
           "*": "deny",
-          "**/raws/*.json": "allow",
-          "**/raws/*.yaml": "allow",
+          "**/raws/**/*.json": "allow",
+          "**/raws/**/*.yaml": "allow",
           "**/manifests/*.md": "allow",
           "**/manifests/storyboard.yaml": "allow",
           "**/manifests/resources.yaml": "allow"
